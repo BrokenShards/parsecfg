@@ -19,14 +19,24 @@ mod tests
 {
 	use crate::{string_to_tokens, Document, FromTokens, Key, KeyValue, Section};
 
-	const TEST_KEY: &str = "\tOrange= \"Banana\" # Comment";
-	const TEST_ARRAY: &str = " Array =[ \"One\", # Comment\n\"Two\", \"Three\" ]";
+	const TEST_STRING: &str = "\tOrange= \"Banana\" # Comment";
+	const TEST_STRING_APPEND: &str = "\tOrange= \"Ban\" \"ana\" # Comment";
+	const TEST_IMP_INT: &str = "\tHealth   = 500  # Comment";
+	const TEST_IMP_FLT: &str = "\tProgress = 0.67 # Comment";
+	const TEST_INT: &str = "\tHealth = 400i # Comment";
+	const TEST_UINT: &str = "\tHealth = 300u # Comment";
+	const TEST_FLT: &str = "\tHealth = 200f # Comment";
+	const TEST_ARRAY_STR: &str = " Array =[ \"One\", # Comment\n\"Two\", \"Three\" ]";
+	const TEST_ARRAY_INT: &str = " Array =[ 4, 7, 64 ]";
+	const TEST_ARRAY_UINT: &str = " Array =[ 4u, 7u, 64u ]";
+	const TEST_ARRAY_FLT: &str = " Array =[ 4f, 7f, 64f ]";
 	const TEST_TABLE: &str = "Language={#Comment\nName=\"C++\",#Comment\nAlias=[\"c++\",\"cpp\",\"\
 	                          cplusplus\"]#Comment\n }";
+	const TEST_TUPLE: &str = "Tuple=( \"Gary\", 4f )";
 	const TEST_SECTION: &str =
 		"[\tTest ]\nFruit = \"Oranges\"# Comment\nElephants = \"No Thanks!\"";
-	const TEST_DOCUMENT: &str = "[Size]# Comment\nWidth = \"800\"#Bon\nHeight = \
-	                             \"600\"#Lem\n[Position]\nX = \"20\"\nY = \"40\"";
+	const TEST_DOCUMENT: &str =
+		"[Size]# Comment\nWidth = 800u#Bon\nHeight = 600u#Lem\n[Position]\nX = 20\nY = 40";
 
 	#[test]
 	fn key_test()
@@ -36,100 +46,385 @@ mod tests
 		assert_eq!(key.name().as_str(), "Banana");
 		assert_eq!(key.value, KeyValue::String(String::from("BoingBoingBoing")));
 
-		let tokens = match string_to_tokens(TEST_KEY)
+		// String
 		{
-			Ok(k) => k,
-			Err(e) =>
+			let tokens = match string_to_tokens(TEST_STRING)
 			{
-				println!("{e}");
-				panic!()
-			}
-		};
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
 
-		let mut index = 0usize;
+			let mut index = 0usize;
 
-		key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Orange");
+			assert_eq!(key.value, KeyValue::String(String::from("Banana")));
+		}
+		// String Append
 		{
-			Ok(k) => k,
-			Err(e) =>
+			let tokens = match string_to_tokens(TEST_STRING_APPEND)
 			{
-				println!("{e}");
-				panic!()
-			}
-		};
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
 
-		assert_eq!(key.name().as_str(), "Orange");
-		assert_eq!(key.value, KeyValue::String(String::from("Banana")));
+			let mut index = 0usize;
 
-		let tokens = match string_to_tokens(TEST_ARRAY)
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Orange");
+			assert_eq!(key.value, KeyValue::String(String::from("Banana")));
+		}
+		// Implicit Integer
 		{
-			Ok(k) => k,
-			Err(e) =>
+			let tokens = match string_to_tokens(TEST_IMP_INT)
 			{
-				println!("{e}");
-				panic!()
-			}
-		};
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
 
-		index = 0usize;
+			let mut index = 0usize;
 
-		key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Health");
+			assert_eq!(key.value, KeyValue::Integer(500i64));
+		}
+		// Implicit Float
 		{
-			Ok(k) => k,
-			Err(e) =>
+			let tokens = match string_to_tokens(TEST_IMP_FLT)
 			{
-				println!("{e}");
-				panic!()
-			}
-		};
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
 
-		assert_eq!(key.name().as_str(), "Array");
-		assert_eq!(
-			key.value,
-			KeyValue::Array(vec![
-				String::from("One"),
-				String::from("Two"),
-				String::from("Three")
-			])
-		);
+			let mut index = 0usize;
 
-		let tokens = match string_to_tokens(TEST_TABLE)
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Progress");
+			assert_eq!(key.value, KeyValue::Float(0.67f64));
+		}
+		// Explicit Signed Integer
 		{
-			Ok(k) => k,
-			Err(e) =>
+			let tokens = match string_to_tokens(TEST_INT)
 			{
-				println!("{e}");
-				panic!()
-			}
-		};
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
 
-		index = 0usize;
+			let mut index = 0usize;
 
-		key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Health");
+			assert_eq!(key.value, KeyValue::Integer(400i64));
+		}
+		// Explicit Unsigned Integer
 		{
-			Ok(k) => k,
-			Err(e) =>
+			let tokens = match string_to_tokens(TEST_UINT)
 			{
-				println!("{e}");
-				panic!()
-			}
-		};
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
 
-		assert_eq!(key.name().as_str(), "Language");
-		assert_eq!(
-			key.value,
-			KeyValue::Table(vec![
-				Key::new("Name", KeyValue::String(String::from("C++"))),
-				Key::new(
-					"Alias",
-					KeyValue::Array(vec![
-						String::from("c++"),
-						String::from("cpp"),
-						String::from("cplusplus")
-					])
-				)
-			])
-		);
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Health");
+			assert_eq!(key.value, KeyValue::Unsigned(300u64));
+		}
+		// Explicit Float
+		{
+			let tokens = match string_to_tokens(TEST_FLT)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Health");
+			assert_eq!(key.value, KeyValue::Float(200f64));
+		}
+
+		// String Array
+		{
+			let tokens = match string_to_tokens(TEST_ARRAY_STR)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Array");
+			assert_eq!(
+				key.value,
+				KeyValue::StringArray(vec![
+					String::from("One"),
+					String::from("Two"),
+					String::from("Three")
+				])
+			);
+		}
+		// Integer Array
+		{
+			let tokens = match string_to_tokens(TEST_ARRAY_INT)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Array");
+			assert_eq!(key.value, KeyValue::IntegerArray(vec![4i64, 7i64, 64i64]));
+		}
+		// Unsigned Integer Array
+		{
+			let tokens = match string_to_tokens(TEST_ARRAY_UINT)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Array");
+			assert_eq!(key.value, KeyValue::UnsignedArray(vec![4u64, 7u64, 64u64]));
+		}
+		// Float Array
+		{
+			let tokens = match string_to_tokens(TEST_ARRAY_FLT)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Array");
+			assert_eq!(key.value, KeyValue::FloatArray(vec![4f64, 7f64, 64f64]));
+		}
+
+		// Tuple
+		{
+			let tokens = match string_to_tokens(TEST_TUPLE)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Tuple");
+			assert_eq!(
+				key.value,
+				KeyValue::Tuple(vec![
+					KeyValue::String(String::from("Gary")),
+					KeyValue::Float(4f64)
+				])
+			);
+		}
+		// Table
+		{
+			let tokens = match string_to_tokens(TEST_TABLE)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			let mut index = 0usize;
+
+			key = match Key::from_tokens(&tokens, &mut index)
+			{
+				Ok(k) => k,
+				Err(e) =>
+				{
+					println!("{e}");
+					panic!()
+				}
+			};
+
+			assert_eq!(key.name().as_str(), "Language");
+			assert_eq!(
+				key.value,
+				KeyValue::Table(vec![
+					Key::new("Name", KeyValue::String(String::from("C++"))),
+					Key::new(
+						"Alias",
+						KeyValue::StringArray(vec![
+							String::from("c++"),
+							String::from("cpp"),
+							String::from("cplusplus")
+						])
+					)
+				])
+			);
+		}
 	}
 	#[test]
 	fn section_test()
@@ -235,21 +530,21 @@ mod tests
 		assert_eq!(*doc.get_at(0).unwrap().name(), "Size");
 		assert_eq!(
 			doc.get_at(0).unwrap().get("Width").unwrap().value,
-			KeyValue::String(String::from("800"))
+			KeyValue::Unsigned(800u64)
 		);
 		assert_eq!(
 			doc.get_at(0).unwrap().get("Height").unwrap().value,
-			KeyValue::String(String::from("600"))
+			KeyValue::Unsigned(600u64)
 		);
 
 		assert_eq!(*doc.get_at(1).unwrap().name(), "Position");
 		assert_eq!(
 			doc.get_at(1).unwrap().get("X").unwrap().value,
-			KeyValue::String(String::from("20"))
+			KeyValue::Integer(20i64)
 		);
 		assert_eq!(
 			doc.get_at(1).unwrap().get("Y").unwrap().value,
-			KeyValue::String(String::from("40"))
+			KeyValue::Integer(40i64)
 		);
 	}
 }

@@ -22,8 +22,8 @@ use crate::{
 	FromTokens, Key, Token,
 };
 
-/// A named section containing a collection of keys.
-#[derive(Clone, Debug, Eq, PartialEq)]
+/// A named section containing a collection of [`Key`]s.
+#[derive(Clone, Debug, PartialEq)]
 pub struct Section
 {
 	m_name: String,
@@ -49,9 +49,7 @@ impl FromTokens for Section
 
 		if !is_section_tokens(tokens, index)
 		{
-			return Err(box_error(
-				"Cannot parse Section from tokens: Expected Section header.",
-			));
+			return Err(box_error("Unexpected token. Expected Section header."));
 		}
 
 		*index += 1;
@@ -62,9 +60,7 @@ impl FromTokens for Section
 		}
 		else
 		{
-			return Err(box_error(
-				"Cannot parse Section from tokens: Expected Identifier.",
-			));
+			return Err(box_error("Unexpected token. Expected Identifier."));
 		};
 		*index += 2;
 
@@ -83,15 +79,15 @@ impl FromTokens for Section
 				Err(e) =>
 				{
 					return Err(box_error(&format!(
-						"Cannot parse Section from tokens: Failed loading key: {e}."
+						"Failed loading key in section {id}: {e}."
 					)))
 				}
 			};
 			if !k.is_valid()
 			{
-				return Err(box_error(
-					"Cannot parse Section from tokens: Parsed key is invalid.",
-				));
+				return Err(box_error(&format!(
+					"Failed loading key in section {id}: Parsed key is invalid."
+				)));
 			}
 
 			let klo = k.name().to_lowercase();
@@ -101,7 +97,8 @@ impl FromTokens for Section
 				if ky.name().to_lowercase() == klo
 				{
 					return Err(box_error(&format!(
-						"Cannot parse Section from tokens: A key with the name {} already exists.",
+						"Failed loading key in section {id}: A key with the name {} already \
+						 exists.",
 						ky.name()
 					)));
 				}

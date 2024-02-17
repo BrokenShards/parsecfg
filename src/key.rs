@@ -22,7 +22,8 @@ use crate::{
 	FromTokens, KeyValue, Token,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+/// A key-value pair containing a string name and a [`KeyValue`]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Key
 {
 	m_name: String,

@@ -20,11 +20,20 @@ use crate::{
 use std::fmt::Display;
 
 /// Possible values a [`Key`] can contain.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum KeyValue
 {
 	String(String),
-	Array(Vec<String>),
+	Integer(i64),
+	Unsigned(u64),
+	Float(f64),
+
+	StringArray(Vec<String>),
+	IntegerArray(Vec<i64>),
+	UnsignedArray(Vec<u64>),
+	FloatArray(Vec<f64>),
+
+	Tuple(Vec<KeyValue>),
 	Table(Vec<Key>),
 }
 impl Default for KeyValue
@@ -51,70 +60,329 @@ impl FromTokens for KeyValue
 			Token::String(s) =>
 			{
 				*index += 1;
-				return Ok(Self::String(s.clone()));
+				Ok(Self::String(s.clone()))
+			}
+			Token::Integer(s) =>
+			{
+				*index += 1;
+				Ok(Self::Integer(*s))
+			}
+			Token::Unsigned(s) =>
+			{
+				*index += 1;
+				Ok(Self::Unsigned(*s))
+			}
+			Token::Float(s) =>
+			{
+				*index += 1;
+				Ok(Self::Float(*s))
 			}
 			Token::OpenBracket =>
 			{
-				let mut result: Vec<String> = Vec::new();
-
 				*index += 1;
 
+				if *index >= len
+				{
+					return Err(box_error("Unexpected end of tokens: Incomplete Array."));
+				}
+
+				match &tokens[*index]
+				{
+					Token::String(_) =>
+					{
+						let mut ready = true;
+						let mut closed = false;
+						let mut result: Vec<String> = Vec::new();
+
+						while *index < len
+						{
+							match &tokens[*index]
+							{
+								Token::String(s) =>
+								{
+									if !ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected separator or close \
+											 bracket.",
+										));
+									}
+									result.push(s.clone());
+									ready = false;
+								}
+								Token::Separator =>
+								{
+									if ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected string or close bracket.",
+										));
+									}
+
+									ready = true;
+								}
+								Token::CloseBracket =>
+								{
+									closed = true;
+									*index += 1;
+									break;
+								}
+								_ =>
+								{
+									return Err(box_error(&format!(
+										"Unexpected token: {}.",
+										&tokens[*index]
+									)))
+								}
+							}
+
+							*index += 1;
+						}
+
+						if !closed
+						{
+							Err(box_error("StringArray missing closing square bracket."))
+						}
+						else
+						{
+							Ok(Self::StringArray(result))
+						}
+					}
+					Token::Integer(_) =>
+					{
+						let mut ready = true;
+						let mut closed = false;
+						let mut result: Vec<i64> = Vec::new();
+
+						while *index < len
+						{
+							match &tokens[*index]
+							{
+								Token::Integer(s) =>
+								{
+									if !ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected separator or close \
+											 bracket.",
+										));
+									}
+									result.push(*s);
+									ready = false;
+								}
+								Token::Separator =>
+								{
+									if ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected integer or close bracket.",
+										));
+									}
+
+									ready = true;
+								}
+								Token::CloseBracket =>
+								{
+									closed = true;
+									*index += 1;
+									break;
+								}
+								_ =>
+								{
+									return Err(box_error(&format!(
+										"Unexpected token: {}.",
+										&tokens[*index]
+									)))
+								}
+							}
+
+							*index += 1;
+						}
+
+						if !closed
+						{
+							Err(box_error("IntegerArray missing closing square bracket."))
+						}
+						else
+						{
+							Ok(Self::IntegerArray(result))
+						}
+					}
+					Token::Unsigned(_) =>
+					{
+						let mut ready = true;
+						let mut closed = false;
+						let mut result: Vec<u64> = Vec::new();
+
+						while *index < len
+						{
+							match &tokens[*index]
+							{
+								Token::Unsigned(s) =>
+								{
+									if !ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected separator or close \
+											 bracket.",
+										));
+									}
+									result.push(*s);
+									ready = false;
+								}
+								Token::Separator =>
+								{
+									if ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected unsigned integer or close \
+											 bracket.",
+										));
+									}
+
+									ready = true;
+								}
+								Token::CloseBracket =>
+								{
+									closed = true;
+									*index += 1;
+									break;
+								}
+								_ =>
+								{
+									return Err(box_error(&format!(
+										"Unexpected token: {}.",
+										&tokens[*index]
+									)))
+								}
+							}
+
+							*index += 1;
+						}
+
+						if !closed
+						{
+							Err(box_error("UnsignedArray missing closing square bracket."))
+						}
+						else
+						{
+							Ok(Self::UnsignedArray(result))
+						}
+					}
+					Token::Float(_) =>
+					{
+						let mut ready = true;
+						let mut closed = false;
+						let mut result: Vec<f64> = Vec::new();
+
+						while *index < len
+						{
+							match &tokens[*index]
+							{
+								Token::Float(s) =>
+								{
+									if !ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected separator or close \
+											 bracket.",
+										));
+									}
+									result.push(*s);
+									ready = false;
+								}
+								Token::Separator =>
+								{
+									if ready
+									{
+										return Err(box_error(
+											"Unexpected token; expected float or close bracket.",
+										));
+									}
+
+									ready = true;
+								}
+								Token::CloseBracket =>
+								{
+									closed = true;
+									*index += 1;
+									break;
+								}
+								_ =>
+								{
+									return Err(box_error(&format!(
+										"Unexpected token: {}.",
+										&tokens[*index]
+									)))
+								}
+							}
+
+							*index += 1;
+						}
+
+						if !closed
+						{
+							Err(box_error("FloatArray missing closing square bracket."))
+						}
+						else
+						{
+							Ok(Self::FloatArray(result))
+						}
+					}
+					Token::CloseBracket =>
+					{
+						*index += 1;
+						Ok(Self::StringArray(vec![]))
+					}
+					_ => Err(box_error(
+						"Unexpected token; expected value or close bracket.",
+					)),
+				}
+			}
+			Token::OpenParen =>
+			{
+				let mut result: Vec<KeyValue> = Vec::new();
 				let mut ready = true;
 				let mut closed = false;
 
+				*index += 1;
+
 				while *index < len
 				{
-					match &tokens[*index]
+					if tokens[*index] == Token::CloseParen
 					{
-						Token::String(s) =>
-						{
-							if !ready
-							{
-								return Err(box_error(
-									"Unexpected token when loading Array; expected separator or \
-									 close bracket.",
-								));
-							}
-							result.push(s.clone());
-							ready = false;
-						}
-						Token::Separator =>
-						{
-							if ready
-							{
-								return Err(box_error(
-									"Unexpected token when loading Array; expected string or \
-									 close bracket.",
-								));
-							}
-
-							ready = true;
-						}
-						Token::CloseBracket =>
-						{
-							closed = true;
-							*index += 1;
-							break;
-						}
-						_ =>
-						{
-							return Err(box_error(&format!(
-								"Unexpected token when loading Array: {}.",
-								&tokens[*index]
-							)))
-						}
+						closed = true;
+						*index += 1;
+						break;
 					}
 
-					*index += 1;
+					if !ready
+					{
+						if tokens[*index] == Token::Separator
+						{
+							ready = true;
+							*index += 1;
+							continue;
+						}
+
+						return Err(box_error(&format!(
+							"Unexpected token: {}. Expected comma.",
+							&tokens[*index]
+						)));
+					}
+
+					let key = KeyValue::from_tokens(&tokens, index)?;
+					result.push(key);
+					ready = false;
 				}
 
 				if !closed
 				{
-					Err(box_error("Array missing closing square bracket."))
+					Err(box_error("Tuple missing closing parenthesis."))
 				}
 				else
 				{
-					Ok(Self::Array(result))
+					Ok(Self::Tuple(result))
 				}
 			}
 			Token::OpenBrace =>
@@ -144,7 +412,7 @@ impl FromTokens for KeyValue
 						}
 
 						return Err(box_error(&format!(
-							"Unexpected token when loading Table: {}. Expected comma.",
+							"Unexpected token: {}. Expected comma.",
 							&tokens[*index]
 						)));
 					}
@@ -154,8 +422,8 @@ impl FromTokens for KeyValue
 					if !key.is_valid()
 					{
 						return Err(box_error(&format!(
-							"Error when loading Table: The key {} is invalid.",
-							key.name()
+							"Parsed Key: {} invalid in Table.",
+							&key.name()
 						)));
 					}
 
@@ -165,7 +433,7 @@ impl FromTokens for KeyValue
 
 				if !closed
 				{
-					Err(box_error("Table missing closing square bracket."))
+					Err(box_error("Table missing closing bracket."))
 				}
 				else
 				{
@@ -185,7 +453,10 @@ impl Display for KeyValue
 		match self
 		{
 			KeyValue::String(s) => write!(f, "\"{s}\""),
-			KeyValue::Array(a) =>
+			KeyValue::Integer(s) => write!(f, "{s}"),
+			KeyValue::Unsigned(s) => write!(f, "{s}"),
+			KeyValue::Float(s) => write!(f, "{s}"),
+			KeyValue::StringArray(a) =>
 			{
 				let mut result = writeln!(f, "[");
 
@@ -205,6 +476,90 @@ impl Display for KeyValue
 				}
 
 				write!(f, "]")
+			}
+			KeyValue::IntegerArray(a) =>
+			{
+				let mut result = writeln!(f, "[");
+
+				if result.is_err()
+				{
+					return result;
+				}
+
+				for s in a
+				{
+					result = writeln!(f, "\t{s},");
+
+					if result.is_err()
+					{
+						return result;
+					}
+				}
+
+				write!(f, "]")
+			}
+			KeyValue::UnsignedArray(a) =>
+			{
+				let mut result = writeln!(f, "[");
+
+				if result.is_err()
+				{
+					return result;
+				}
+
+				for s in a
+				{
+					result = writeln!(f, "\t{s},");
+
+					if result.is_err()
+					{
+						return result;
+					}
+				}
+
+				write!(f, "]")
+			}
+			KeyValue::FloatArray(a) =>
+			{
+				let mut result = writeln!(f, "[");
+
+				if result.is_err()
+				{
+					return result;
+				}
+
+				for s in a
+				{
+					result = writeln!(f, "\t{s},");
+
+					if result.is_err()
+					{
+						return result;
+					}
+				}
+
+				write!(f, "]")
+			}
+			KeyValue::Tuple(t) =>
+			{
+				let mut result = writeln!(f, "(");
+
+				if result.is_err()
+				{
+					return result;
+				}
+
+				for s in t
+				{
+					result = writeln!(f, "{},", indent(&s.to_string(), 1));
+
+					if result.is_err()
+					{
+						return result;
+					}
+				}
+
+				write!(f, ")")
 			}
 			KeyValue::Table(t) =>
 			{
