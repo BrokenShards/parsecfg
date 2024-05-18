@@ -17,7 +17,7 @@
 #[cfg(test)]
 mod tests
 {
-	use crate::{string_to_tokens, Document, FromTokens, Key, KeyValue, Section};
+	use crate::{lexer::*, Document, Key, KeyValue, Section};
 
 	const TEST_STRING: &str = "\tOrange= \"Banana\" # Comment";
 	const TEST_STRING_APPEND: &str = "\tOrange= \"Ban\" \"ana\" # Comment";
@@ -46,11 +46,14 @@ mod tests
 		assert_eq!(key.name().as_str(), "Banana");
 		assert_eq!(key.value, KeyValue::String(String::from("BoingBoingBoing")));
 
+		let mut lexer = Lexer::new();
+
 		// String
 		{
-			let tokens = match string_to_tokens(TEST_STRING)
+			match lexer.parse_string(TEST_STRING)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -58,9 +61,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -75,9 +76,10 @@ mod tests
 		}
 		// String Append
 		{
-			let tokens = match string_to_tokens(TEST_STRING_APPEND)
+			match lexer.parse_string(TEST_STRING_APPEND)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -85,9 +87,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -102,9 +102,10 @@ mod tests
 		}
 		// Implicit Integer
 		{
-			let tokens = match string_to_tokens(TEST_IMP_INT)
+			match lexer.parse_string(TEST_IMP_INT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -112,9 +113,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -129,9 +128,10 @@ mod tests
 		}
 		// Implicit Float
 		{
-			let tokens = match string_to_tokens(TEST_IMP_FLT)
+			match lexer.parse_string(TEST_IMP_FLT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -139,9 +139,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -156,7 +154,7 @@ mod tests
 		}
 		// Explicit Signed Integer
 		{
-			let tokens = match string_to_tokens(TEST_INT)
+			match lexer.parse_string(TEST_INT)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -166,9 +164,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -183,9 +179,10 @@ mod tests
 		}
 		// Explicit Unsigned Integer
 		{
-			let tokens = match string_to_tokens(TEST_UINT)
+			match lexer.parse_string(TEST_UINT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -193,9 +190,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -210,9 +205,10 @@ mod tests
 		}
 		// Explicit Float
 		{
-			let tokens = match string_to_tokens(TEST_FLT)
+			match lexer.parse_string(TEST_FLT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -220,9 +216,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -238,9 +232,10 @@ mod tests
 
 		// String Array
 		{
-			let tokens = match string_to_tokens(TEST_ARRAY_STR)
+			match lexer.parse_string(TEST_ARRAY_STR)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -248,9 +243,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -272,9 +265,10 @@ mod tests
 		}
 		// Integer Array
 		{
-			let tokens = match string_to_tokens(TEST_ARRAY_INT)
+			match lexer.parse_string(TEST_ARRAY_INT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -282,9 +276,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -299,9 +291,10 @@ mod tests
 		}
 		// Unsigned Integer Array
 		{
-			let tokens = match string_to_tokens(TEST_ARRAY_UINT)
+			match lexer.parse_string(TEST_ARRAY_UINT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -309,9 +302,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -326,9 +317,10 @@ mod tests
 		}
 		// Float Array
 		{
-			let tokens = match string_to_tokens(TEST_ARRAY_FLT)
+			match lexer.parse_string(TEST_ARRAY_FLT)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -336,9 +328,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -354,9 +344,10 @@ mod tests
 
 		// Tuple
 		{
-			let tokens = match string_to_tokens(TEST_TUPLE)
+			match lexer.parse_string(TEST_TUPLE)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -364,9 +355,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -387,9 +376,10 @@ mod tests
 		}
 		// Table
 		{
-			let tokens = match string_to_tokens(TEST_TABLE)
+			match lexer.parse_string(TEST_TABLE)
 			{
-				Ok(k) => k,
+				Ok(_) =>
+				{}
 				Err(e) =>
 				{
 					println!("{e}");
@@ -397,9 +387,7 @@ mod tests
 				}
 			};
 
-			let mut index = 0usize;
-
-			key = match Key::from_tokens(&tokens, &mut index)
+			key = match Key::from_lexer(&mut lexer)
 			{
 				Ok(k) => k,
 				Err(e) =>
@@ -447,9 +435,12 @@ mod tests
 			Key::new("Height", KeyValue::String(String::from("600")))
 		);
 
-		let tokens = match string_to_tokens(TEST_SECTION)
+		let mut lexer = Lexer::new();
+
+		match lexer.parse_string(TEST_SECTION)
 		{
-			Ok(k) => k,
+			Ok(_) =>
+			{}
 			Err(e) =>
 			{
 				println!("{e}");
@@ -457,9 +448,7 @@ mod tests
 			}
 		};
 
-		let mut index = 0usize;
-
-		sect = match Section::from_tokens(&tokens, &mut index)
+		sect = match Section::from_lexer(&mut lexer)
 		{
 			Ok(k) => k,
 			Err(e) =>
@@ -505,9 +494,12 @@ mod tests
 			KeyValue::String(String::from("800"))
 		);
 
-		let tokens = match string_to_tokens(TEST_DOCUMENT)
+		let mut lexer = Lexer::new();
+
+		match lexer.parse_string(TEST_DOCUMENT)
 		{
-			Ok(k) => k,
+			Ok(_) =>
+			{}
 			Err(e) =>
 			{
 				println!("{e}");
@@ -515,9 +507,7 @@ mod tests
 			}
 		};
 
-		let mut index = 0usize;
-
-		doc = match Document::from_tokens(&tokens, &mut index)
+		doc = match Document::from_lexer(&mut lexer)
 		{
 			Ok(k) => k,
 			Err(e) =>

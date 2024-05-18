@@ -18,8 +18,9 @@ use std::fmt::Display;
 
 use crate::{
 	error::{box_error, CfgResult},
+	lexer::{FromLexer, Lexer},
 	name::{as_valid_name, is_valid_name},
-	FromTokens, KeyValue, Token,
+	KeyValue, Token,
 };
 
 /// A key-value pair containing a string name and a [`KeyValue`]
@@ -41,20 +42,18 @@ impl Default for Key
 		}
 	}
 }
-impl FromTokens for Key
+impl FromLexer for Key
 {
-	fn from_tokens(tokens: &Vec<Token>, index: &mut usize) -> CfgResult<Self>
+	fn from_lexer(lexer: &mut Lexer) -> CfgResult<Self>
 	where
 		Self: Sized,
 	{
-		let len = tokens.len();
-
-		if *index + 2 >= len
+		if lexer.len() < 3
 		{
 			return Err(box_error("Not enough tokens left to load Key."));
 		}
 
-		let id = if let Token::Identifier(i) = &tokens[*index]
+		let id = if let Token::Identifier(i) = lexer.pop_front().unwrap()
 		{
 			i
 		}
@@ -63,16 +62,19 @@ impl FromTokens for Key
 			return Err(box_error("Unexpected token. Expected Identifier."));
 		};
 
-		*index += 1;
-
-		if tokens[*index] != Token::Equals
+		if lexer.pop_front().unwrap() != Token::Equals
 		{
-			return Err(box_error("Unexpected token. Expected equals sign."));
+			return Err(box_error("Unexpected token. Expected Equals."));
 		}
 
-		*index += 1;
-
-		let val = KeyValue::from_tokens(&tokens, index)?;
+		let val = match KeyValue::from_lexer(lexer)
+		{
+			Ok(k) => k,
+			Err(e) =>
+			{
+				return Err(box_error(&format!("Failed parsing KeyValue: {e}")));
+			}
+		};
 		Ok(Self::new(&id, val))
 	}
 }

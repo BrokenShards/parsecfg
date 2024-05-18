@@ -20,6 +20,7 @@ pub mod name;
 mod document;
 mod key;
 mod key_value;
+mod lexer;
 mod section;
 mod test;
 mod token;

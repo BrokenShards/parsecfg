@@ -18,8 +18,9 @@ use std::fmt::Display;
 
 use crate::{
 	error::{box_error, CfgResult},
+	lexer::{FromLexer, Lexer},
 	name::{as_valid_name, is_valid_name},
-	FromTokens, Key, Token,
+	Key, Token,
 };
 
 /// A named section containing a collection of [`Key`]s.
@@ -39,54 +40,93 @@ impl Default for Section
 		}
 	}
 }
-impl FromTokens for Section
+impl FromLexer for Section
 {
-	fn from_tokens(tokens: &Vec<Token>, index: &mut usize) -> CfgResult<Self>
+	fn from_lexer(lexer: &mut Lexer) -> CfgResult<Self>
 	where
 		Self: Sized,
 	{
-		let len = tokens.len();
+		let is_section_tokens = |lex: &Lexer| -> bool {
+			let len = lex.len();
 
-		if !is_section_tokens(tokens, index)
-		{
-			return Err(box_error("Unexpected token. Expected Section header."));
-		}
+			if len < 3
+			{
+				return false;
+			}
 
-		*index += 1;
+			let peeks = lex.peek_to(3usize);
 
-		let id = if let Token::Identifier(i) = &tokens[*index]
-		{
-			i
-		}
-		else
-		{
-			return Err(box_error("Unexpected token. Expected Identifier."));
+			match peeks[0]
+			{
+				Token::OpenBracket =>
+				{}
+				_ => return false,
+			};
+
+			if let Token::Identifier(_) = peeks[1]
+			{
+			}
+			else
+			{
+				return false;
+			};
+
+			match peeks[2]
+			{
+				Token::CloseBracket =>
+				{}
+				_ => return false,
+			};
+
+			return true;
 		};
-		*index += 2;
+		let get_section_id = |lex: &mut Lexer| -> CfgResult<String> {
+			if !is_section_tokens(lex)
+			{
+				return Err(box_error(
+					"Failed loading section: Section header not found.",
+				));
+			}
+
+			lex.pop_front();
+
+			let id = if let Some(Token::Identifier(i)) = lex.pop_front()
+			{
+				i.clone()
+			}
+			else
+			{
+				return Err(box_error("Failed loading section: No section name found."));
+			};
+
+			lex.pop_front();
+			Ok(id)
+		};
+
+		let id = match get_section_id(lexer)
+		{
+			Ok(i) => i.clone(),
+			Err(e) => return Err(box_error(&format!("{e}"))),
+		};
 
 		let mut keys: Vec<Key> = Vec::new();
 
-		while *index < len
+		while !lexer.is_empty()
 		{
-			if is_section_tokens(tokens, index)
+			if is_section_tokens(lexer)
 			{
 				break;
 			}
 
-			let k = match Key::from_tokens(&tokens, index)
+			let k = match Key::from_lexer(lexer)
 			{
 				Ok(k) => k,
-				Err(e) =>
-				{
-					return Err(box_error(&format!(
-						"Failed loading key in section {id}: {e}."
-					)))
-				}
+				Err(e) => return Err(box_error(&format!("Failed loading key in section: {e}."))),
 			};
 			if !k.is_valid()
 			{
 				return Err(box_error(&format!(
-					"Failed loading key in section {id}: Parsed key is invalid."
+					"Failed loading key in section {k}: Parsed key is invalid."
 				)));
 			}
 
@@ -278,25 +318,4 @@ impl Section
 	}
 	/// Clears the section, removing all keys.
 	pub fn clear(&mut self) { self.m_keys.clear(); }
-}
-
-/// Returns true if the next tokens, starting from `index`, within `tokens`, describe a section
-/// header, otherwise false.
-pub fn is_section_tokens(tokens: &Vec<Token>, index: &usize) -> bool
-{
-	if index + 2 >= tokens.len()
-		|| tokens[*index] != Token::OpenBracket
-		|| tokens[*index + 2] != Token::CloseBracket
-	{
-		return false;
-	}
-
-	if let Token::Identifier(_) = tokens[*index + 1]
-	{
-		true
-	}
-	else
-	{
-		false
-	}
 }

@@ -16,7 +16,8 @@
 //
 use crate::{
 	error::{box_error, make_error, CfgError, CfgResult},
-	string_to_tokens, FromTokens, Section, Token,
+	lexer::*,
+	Section,
 };
 use std::{fmt::Display, fs, str::FromStr};
 
@@ -34,15 +35,13 @@ impl Default for Document
 		}
 	}
 }
-impl FromTokens for Document
+impl FromLexer for Document
 {
-	fn from_tokens(tokens: &Vec<Token>, index: &mut usize) -> CfgResult<Self>
+	fn from_lexer(lexer: &mut Lexer) -> CfgResult<Self>
 	where
 		Self: Sized,
 	{
-		let len = tokens.len();
-
-		if *index >= len
+		if lexer.is_empty()
 		{
 			return Err(box_error(
 				"Cannot parse Document from tokens: Index out of range.",
@@ -51,9 +50,9 @@ impl FromTokens for Document
 
 		let mut sects: Vec<Section> = Vec::new();
 
-		while *index < len
+		while !lexer.is_empty()
 		{
-			let s = Section::from_tokens(&tokens, index)?;
+			let s = Section::from_lexer(lexer)?;
 
 			if !s.is_valid()
 			{
@@ -89,20 +88,21 @@ impl FromStr for Document
 
 	fn from_str(s: &str) -> Result<Self, Self::Err>
 	{
-		let tokens = match string_to_tokens(s)
+		let mut lexer = Lexer::new();
+
+		match lexer.parse_string(s)
 		{
-			Ok(ts) => ts,
 			Err(e) =>
 			{
 				return Err(make_error(&format!(
 					"Cannot parse string into tokens to create a document: {e}"
 				)))
 			}
+			_ =>
+			{}
 		};
 
-		let mut index = 0usize;
-
-		match Document::from_tokens(&tokens, &mut index)
+		match Document::from_lexer(&mut lexer)
 		{
 			Ok(k) => Ok(k),
 			Err(e) =>

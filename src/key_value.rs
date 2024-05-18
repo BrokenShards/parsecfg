@@ -15,7 +15,9 @@
 //
 use crate::{
 	error::{box_error, CfgResult},
-	indent, FromTokens, Key, Token,
+	indent,
+	lexer::{FromLexer, Lexer},
+	Key, Token,
 };
 use std::fmt::Display;
 
@@ -40,63 +42,56 @@ impl Default for KeyValue
 {
 	fn default() -> Self { Self::String(String::default()) }
 }
-impl FromTokens for KeyValue
+impl FromLexer for KeyValue
 {
-	fn from_tokens(tokens: &Vec<Token>, index: &mut usize) -> CfgResult<Self>
+	fn from_lexer(lexer: &mut Lexer) -> CfgResult<Self>
 	where
 		Self: Sized,
 	{
-		let len = tokens.len();
-
-		if *index >= len
+		if lexer.is_empty()
 		{
-			return Err(box_error(
-				"Trying to load KeyValue from tokens when the index is out of range.",
-			));
+			return Err(box_error("Trying to load KeyValue from an empty lexer."));
 		}
 
-		match &tokens[*index]
+		let token = lexer.pop_front().unwrap();
+
+		match &token
 		{
-			Token::String(s) =>
-			{
-				*index += 1;
-				Ok(Self::String(s.clone()))
-			}
-			Token::Integer(s) =>
-			{
-				*index += 1;
-				Ok(Self::Integer(*s))
-			}
-			Token::Unsigned(s) =>
-			{
-				*index += 1;
-				Ok(Self::Unsigned(*s))
-			}
-			Token::Float(s) =>
-			{
-				*index += 1;
-				Ok(Self::Float(*s))
-			}
+			Token::String(s) => Ok(Self::String(s.clone())),
+			Token::Integer(s) => Ok(Self::Integer(*s)),
+			Token::Unsigned(s) => Ok(Self::Unsigned(*s)),
+			Token::Float(s) => Ok(Self::Float(*s)),
 			Token::OpenBracket =>
 			{
-				*index += 1;
-
-				if *index >= len
+				if lexer.is_empty()
 				{
 					return Err(box_error("Unexpected end of tokens: Incomplete Array."));
 				}
 
-				match &tokens[*index]
+				let tok = lexer.pop_front().unwrap();
+
+				match &tok
 				{
 					Token::String(_) =>
 					{
+						let mut first = true;
 						let mut ready = true;
 						let mut closed = false;
 						let mut result: Vec<String> = Vec::new();
 
-						while *index < len
+						while !lexer.is_empty()
 						{
-							match &tokens[*index]
+							let t = if first
+							{
+								first = false;
+								tok.clone()
+							}
+							else
+							{
+								lexer.pop_front().unwrap()
+							};
+
+							match &t
 							{
 								Token::String(s) =>
 								{
@@ -107,6 +102,7 @@ impl FromTokens for KeyValue
 											 bracket.",
 										));
 									}
+
 									result.push(s.clone());
 									ready = false;
 								}
@@ -124,19 +120,10 @@ impl FromTokens for KeyValue
 								Token::CloseBracket =>
 								{
 									closed = true;
-									*index += 1;
 									break;
 								}
-								_ =>
-								{
-									return Err(box_error(&format!(
-										"Unexpected token: {}.",
-										&tokens[*index]
-									)))
-								}
+								_ => return Err(box_error(&format!("Unexpected token: {}.", t))),
 							}
-
-							*index += 1;
 						}
 
 						if !closed
@@ -150,13 +137,24 @@ impl FromTokens for KeyValue
 					}
 					Token::Integer(_) =>
 					{
+						let mut first = true;
 						let mut ready = true;
 						let mut closed = false;
 						let mut result: Vec<i64> = Vec::new();
 
-						while *index < len
+						while !lexer.is_empty()
 						{
-							match &tokens[*index]
+							let t = if first
+							{
+								first = false;
+								tok.clone()
+							}
+							else
+							{
+								lexer.pop_front().unwrap()
+							};
+
+							match &t
 							{
 								Token::Integer(s) =>
 								{
@@ -184,19 +182,10 @@ impl FromTokens for KeyValue
 								Token::CloseBracket =>
 								{
 									closed = true;
-									*index += 1;
 									break;
 								}
-								_ =>
-								{
-									return Err(box_error(&format!(
-										"Unexpected token: {}.",
-										&tokens[*index]
-									)))
-								}
+								_ => return Err(box_error("Unexpected token.")),
 							}
-
-							*index += 1;
 						}
 
 						if !closed
@@ -210,13 +199,24 @@ impl FromTokens for KeyValue
 					}
 					Token::Unsigned(_) =>
 					{
+						let mut first = true;
 						let mut ready = true;
 						let mut closed = false;
 						let mut result: Vec<u64> = Vec::new();
 
-						while *index < len
+						while !lexer.is_empty()
 						{
-							match &tokens[*index]
+							let t = if first
+							{
+								first = false;
+								tok.clone()
+							}
+							else
+							{
+								lexer.pop_front().unwrap()
+							};
+
+							match &t
 							{
 								Token::Unsigned(s) =>
 								{
@@ -245,19 +245,10 @@ impl FromTokens for KeyValue
 								Token::CloseBracket =>
 								{
 									closed = true;
-									*index += 1;
 									break;
 								}
-								_ =>
-								{
-									return Err(box_error(&format!(
-										"Unexpected token: {}.",
-										&tokens[*index]
-									)))
-								}
+								_ => return Err(box_error("Unexpected token.")),
 							}
-
-							*index += 1;
 						}
 
 						if !closed
@@ -271,13 +262,24 @@ impl FromTokens for KeyValue
 					}
 					Token::Float(_) =>
 					{
+						let mut first = true;
 						let mut ready = true;
 						let mut closed = false;
 						let mut result: Vec<f64> = Vec::new();
 
-						while *index < len
+						while !lexer.is_empty()
 						{
-							match &tokens[*index]
+							let t = if first
+							{
+								first = false;
+								tok.clone()
+							}
+							else
+							{
+								lexer.pop_front().unwrap()
+							};
+
+							match &t
 							{
 								Token::Float(s) =>
 								{
@@ -305,19 +307,10 @@ impl FromTokens for KeyValue
 								Token::CloseBracket =>
 								{
 									closed = true;
-									*index += 1;
 									break;
 								}
-								_ =>
-								{
-									return Err(box_error(&format!(
-										"Unexpected token: {}.",
-										&tokens[*index]
-									)))
-								}
+								_ => return Err(box_error("Unexpected token.")),
 							}
-
-							*index += 1;
 						}
 
 						if !closed
@@ -329,14 +322,13 @@ impl FromTokens for KeyValue
 							Ok(Self::FloatArray(result))
 						}
 					}
-					Token::CloseBracket =>
+					Token::CloseBracket => Ok(Self::StringArray(vec![])),
+					_ =>
 					{
-						*index += 1;
-						Ok(Self::StringArray(vec![]))
+						return Err(box_error(
+							"Unexpected token; expected value or close bracket.",
+						))
 					}
-					_ => Err(box_error(
-						"Unexpected token; expected value or close bracket.",
-					)),
 				}
 			}
 			Token::OpenParen =>
@@ -345,33 +337,33 @@ impl FromTokens for KeyValue
 				let mut ready = true;
 				let mut closed = false;
 
-				*index += 1;
-
-				while *index < len
+				while !lexer.is_empty()
 				{
-					if tokens[*index] == Token::CloseParen
+					let tok = lexer.peek().unwrap();
+
+					if tok == &Token::CloseParen
 					{
 						closed = true;
-						*index += 1;
+						lexer.pop_front();
 						break;
 					}
 
 					if !ready
 					{
-						if tokens[*index] == Token::Separator
+						if tok == &Token::Separator
 						{
 							ready = true;
-							*index += 1;
+							lexer.pop_front();
 							continue;
 						}
 
 						return Err(box_error(&format!(
 							"Unexpected token: {}. Expected comma.",
-							&tokens[*index]
+							lexer.pop_front().unwrap()
 						)));
 					}
 
-					let key = KeyValue::from_tokens(&tokens, index)?;
+					let key = KeyValue::from_lexer(lexer)?;
 					result.push(key);
 					ready = false;
 				}
@@ -391,33 +383,33 @@ impl FromTokens for KeyValue
 				let mut ready = true;
 				let mut closed = false;
 
-				*index += 1;
-
-				while *index < len
+				while !lexer.is_empty()
 				{
-					if tokens[*index] == Token::CloseBrace
+					let tok = lexer.peek().unwrap();
+
+					if tok == &Token::CloseBrace
 					{
 						closed = true;
-						*index += 1;
+						lexer.pop_front();
 						break;
 					}
 
 					if !ready
 					{
-						if tokens[*index] == Token::Separator
+						if tok == &Token::Separator
 						{
 							ready = true;
-							*index += 1;
+							lexer.pop_front();
 							continue;
 						}
 
 						return Err(box_error(&format!(
 							"Unexpected token: {}. Expected comma.",
-							&tokens[*index]
+							tok
 						)));
 					}
 
-					let key = Key::from_tokens(&tokens, index)?;
+					let key = Key::from_lexer(lexer)?;
 
 					if !key.is_valid()
 					{
